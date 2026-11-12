@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spacetime Sandbox · Special Relativity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Spectral:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#080b16; --bg2:#0d1224; --panel:rgba(20,28,54,0.6); --line:rgba(120,150,230,0.18);
+    --ink:#e8ecff; --muted:#8b96c4; --faint:#5a648f;
+    --lab:#6f7ba8; --cyan:#54d6ff; --amber:#ffb454; --event:#ff5dac; --green:#54e0a0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;
+    background-image:radial-gradient(900px 600px at 80% -10%,rgba(84,214,255,0.1),transparent 60%),radial-gradient(800px 600px at 10% 100%,rgba(255,180,84,0.07),transparent 60%);
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
+  header{margin-bottom:24px}
+  h1{font-weight:600;font-size:27px;letter-spacing:-0.3px}
+  h1 b{color:var(--cyan)}
+  header p{color:var(--muted);font-size:14px;margin-top:4px}
+  .math{font-family:'Spectral',serif;font-style:italic}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;backdrop-filter:blur(10px)}
+  .panel h2{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:14px;font-weight:600}
+  canvas{display:block;width:100%;border-radius:10px;background:#070a14;cursor:crosshair}
+  .diagram-wrap{position:relative}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+  /* controls */
+  .ctl{margin-bottom:22px}
+  .ctl label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px}
+  .ctl label b{font-family:'Spectral',serif;font-style:italic;color:var(--cyan);font-size:16px}
+  input[type=range]{width:100%;accent-color:var(--cyan)}
+  .gamma{text-align:center;margin:6px 0 18px;padding:14px;background:var(--bg2);border:1px solid var(--line);border-radius:12px}
+  .gamma .gv{font-family:'Spectral',serif;font-size:42px;font-weight:500;color:var(--amber);line-height:1}
+  .gamma .gl{font-size:12px;color:var(--faint);letter-spacing:1px;margin-top:4px}
+  .readout{display:flex;flex-direction:column;gap:14px}
+  .ro{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:14px}
+  .ro .rt{font-size:12px;color:var(--faint);letter-spacing:0.5px;margin-bottom:9px;text-transform:uppercase}
+  .bar{height:18px;background:#0a0e1c;border:1px solid var(--line);border-radius:5px;position:relative;overflow:hidden;margin-bottom:7px}
+  .bar i{display:block;height:100%;border-radius:4px;transition:width .15s}
+  .bar.proper i{background:var(--lab)} .bar.contr i{background:linear-gradient(90deg,var(--cyan),#3aa8d8)}
+  .ro .rv{font-size:13px;color:var(--ink);font-family:'Spectral',serif}
+  .ro .rv b{color:var(--cyan)}
+  .clocks{display:flex;gap:14px;align-items:center;justify-content:center}
+  .clock{text-align:center}
+  .clock .face{width:64px;height:64px;border-radius:50%;border:2px solid var(--line);position:relative;margin:0 auto 6px;background:#0a0e1c}
+  .clock .hand{position:absolute;left:50%;bottom:50%;width:2px;height:26px;background:var(--cyan);transform-origin:bottom center}
+  .clock.lab .hand{background:var(--amber)}
+  .clock small{font-size:11px;color:var(--faint)}
+  .clock b{font-family:'Spectral',serif;color:var(--ink);font-size:15px}
+  .ev-coords{font-family:'Spectral',serif;font-size:14px;line-height:1.9}
+  .ev-coords .lab2{color:var(--muted)} .ev-coords .mv{color:var(--amber)}
+  .ev-coords b{color:var(--event)}
+  .row{display:flex;gap:10px;align-items:center;margin-top:14px;font-size:13px;color:var(--muted)}
+  .toggle{appearance:none;width:42px;height:23px;background:#1a2244;border-radius:20px;position:relative;cursor:pointer;outline:none;border:1px solid var(--line);flex-shrink:0}
+  .toggle:checked{background:var(--cyan)}
+  .toggle::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;background:#fff;border-radius:50%;transition:left .2s}
+  .toggle:checked::after{left:21px}
+  .note{font-size:12.5px;color:var(--faint);line-height:1.55;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Spacetime <b>Sandbox</b></h1>
+    <p>Drag the velocity slider — watch length contraction, time dilation and the Minkowski diagram update live. Drag the <span style="color:var(--event)">pink event</span> around the diagram. Units: <span class="math">c = 1</span>.</p>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Minkowski Diagram · lab frame</h2>
+      <div class="diagram-wrap"><canvas id="cv"></canvas></div>
+      <div class="legend">
+        <span><i style="background:var(--lab)"></i>lab axes (x, ct)</span>
+        <span><i style="background:var(--amber)"></i>moving axes (x′, ct′)</span>
+        <span><i style="background:var(--cyan)"></i>light cone (45°)</span>
+        <span><i style="background:var(--event)"></i>event — drag me</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:22px">
+        <div class="ctl">
+          <label>Relative velocity <b>β = <span id="betaV">0.60</span></b></label>
+          <input type="range" id="beta" min="0" max="0.99" step="0.01" value="0.6" />
+        </div>
+        <div class="gamma">
+          <div class="gv">γ = <span id="gammaV">1.25</span></div>
+          <div class="gl">LORENTZ FACTOR</div>
+        </div>
+        <div class="readout">
+          <div class="ro">
+            <div class="rt">Length contraction</div>
+            <div class="bar proper"><i style="width:100%"></i></div>
+            <div class="bar contr"><i id="lenBar" style="width:80%"></i></div>
+            <div class="rv">A rod of proper length <b>1.00 m</b> measures <b id="lenV">0.80 m</b> in the lab.</div>
+          </div>
+          <div class="ro">
+            <div class="rt">Time dilation</div>
+            <div class="clocks">
+              <div class="clock"><div class="face"><div class="hand" id="hMov"></div></div><small>moving clock</small><br><b id="tMov">1.00 s</b></div>
+              <div class="clock lab"><div class="face"><div class="hand" id="hLab"></div></div><small>lab clock</small><br><b id="tLab">1.25 s</b></div>
+            </div>
+            <div class="rv" style="text-align:center;margin-top:10px">1 s on the moving clock = <b id="tDil">1.25 s</b> in the lab.</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Selected Event</h2>
+        <div class="ev-coords">
+          <div class="lab2">Lab frame: <b id="eLab">(x = 2.0, ct = 1.0)</b></div>
+          <div class="mv">Moving frame: <b id="eMov">(x′ = 1.5, ct′ = −0.3)</b></div>
+        </div>
+        <div class="row"><input type="checkbox" id="tGrid" class="toggle" /> <label for="tGrid">show moving-frame grid</label></div>
+        <div class="row"><input type="checkbox" id="tHyp" class="toggle" /> <label for="tHyp">show calibration hyperbolae</label></div>
+        <div class="note">The moving observer's axes tilt toward the light cone as β→1. Events on a line parallel to the <span class="math">x′</span> axis are simultaneous for them — but not for the lab. That tilt <em>is</em> the relativity of simultaneity.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+  let beta=0.6, event={x:2,ct:1}, showGrid=false, showHyp=false;
+  const RANGE=5;                       // units shown each direction
+  let scale=1, ox=0, oy=0, W=0, H=0;
+
+  function resize(){
+    const w=cv.clientWidth; cv.width=w*devicePixelRatio; cv.height=w*devicePixelRatio;
+    cv.style.height=w+"px"; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    W=w; H=w; scale=(w*0.46)/RANGE; ox=w/2; oy=w/2; draw();
+  }
+  // world (x,ct) -> screen
+  const sx=x=>ox+x*scale, sy=ct=>oy-ct*scale;
+  const wx=px=>(px-ox)/scale, wct=py=>(oy-py)/scale;
+  const gamma=()=>1/Math.sqrt(1-beta*beta);
+
+  function line(x1,y1,x2,y2,col,w,dash){ctx.save();ctx.strokeStyle=col;ctx.lineWidth=w||1;if(dash)ctx.setLineDash(dash);
+    ctx.beginPath();ctx.moveTo(sx(x1),sy(y1));ctx.lineTo(sx(x2),sy(y2));ctx.stroke();ctx.restore();}
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // faint lab grid
+    ctx.strokeStyle="rgba(111,123,168,0.13)";ctx.lineWidth=1;
+    for(let i=-RANGE;i<=RANGE;i++){ctx.beginPath();ctx.moveTo(sx(i),sy(-RANGE));ctx.lineTo(sx(i),sy(RANGE));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(sx(-RANGE),sy(i));ctx.lineTo(sx(RANGE),sy(i));ctx.stroke();}
+    // moving-frame grid
+    if(showGrid){const b=beta;
+      ctx.strokeStyle="rgba(255,180,84,0.16)";ctx.lineWidth=1;
+      for(let i=-RANGE;i<=RANGE;i++){
+        // lines parallel to ct' axis (x'=const): points (i*?,..) param ct': x=g(i+b*ct'),ct=g(ct'+b*i)... simpler: param t
+        ctx.beginPath();let first=true;
+        for(let t=-RANGE*1.6;t<=RANGE*1.6;t+=0.2){const x=gamma()*(i+b*t),ct=gamma()*(t+b*i);
+          if(first){ctx.moveTo(sx(x),sy(ct));first=false;}else ctx.lineTo(sx(x),sy(ct));}
+        ctx.stroke();
+        // lines parallel to x' axis (ct'=const = i)
+        ctx.beginPath();first=true;
+        for(let t=-RANGE*1.6;t<=RANGE*1.6;t+=0.2){const x=gamma()*(t+b*i),ct=gamma()*(i+b*t);
+          if(first){ctx.moveTo(sx(x),sy(ct));first=false;}else ctx.lineTo(sx(x),sy(ct));}
+        ctx.stroke();
+      }
+    }
+    // calibration hyperbolae
+    if(showHyp){ctx.strokeStyle="rgba(84,224,160,0.4)";ctx.lineWidth=1.2;
+      for(const u of [1,2,3]){ // x^2-ct^2=u^2 and ct^2-x^2=u^2
+        ctx.beginPath();let f=true;for(let ct=-RANGE;ct<=RANGE;ct+=0.1){const x=Math.sqrt(u*u+ct*ct);f?(ctx.moveTo(sx(x),sy(ct)),f=false):ctx.lineTo(sx(x),sy(ct));}ctx.stroke();
+        ctx.beginPath();f=true;for(let x=-RANGE;x<=RANGE;x+=0.1){const ct=Math.sqrt(u*u+x*x);f?(ctx.moveTo(sx(x),sy(ct)),f=false):ctx.lineTo(sx(x),sy(ct));}ctx.stroke();
+      }}
+    // light cone
+    line(-RANGE,-RANGE,RANGE,RANGE,"rgba(84,214,255,0.55)",1.6);
+    line(-RANGE,RANGE,RANGE,-RANGE,"rgba(84,214,255,0.55)",1.6);
+    // lab axes
+    line(-RANGE,0,RANGE,0,"#6f7ba8",1.6);line(0,-RANGE,0,RANGE,"#6f7ba8",1.6);
+    // moving axes: ct' axis (x=β ct) and x' axis (ct=β x)
+    ctx.strokeStyle="#ffb454";ctx.lineWidth=2.4;
+    ctx.beginPath();ctx.moveTo(sx(-beta*RANGE),sy(-RANGE));ctx.lineTo(sx(beta*RANGE),sy(RANGE));ctx.stroke();      // ct' (worldline)
+    ctx.beginPath();ctx.moveTo(sx(-RANGE),sy(-beta*RANGE));ctx.lineTo(sx(RANGE),sy(beta*RANGE));ctx.stroke();      // x'
+    // labels
+    ctx.fillStyle="#ffb454";ctx.font="italic 13px Spectral";ctx.fillText("ct′",sx(beta*RANGE)+4,sy(RANGE)+14);ctx.fillText("x′",sx(RANGE)-4,sy(beta*RANGE)-6);
+    ctx.fillStyle="#6f7ba8";ctx.fillText("ct",sx(0)+6,sy(RANGE)+14);ctx.fillText("x",sx(RANGE)-12,sy(0)+16);
+    // event projections onto lab
+    line(event.x,0,event.x,event.ct,"rgba(255,93,172,0.3)",1,[4,3]);
+    line(0,event.ct,event.x,event.ct,"rgba(255,93,172,0.3)",1,[4,3]);
+    // event point
+    ctx.fillStyle="#ff5dac";ctx.beginPath();ctx.arc(sx(event.x),sy(event.ct),7,0,7);ctx.fill();
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
+  }
+
+  function update(){
+    document.getElementById("betaV").textContent=beta.toFixed(2);
+    const g=gamma();
+    document.getElementById("gammaV").textContent=g.toFixed(3);
+    document.getElementById("lenV").textContent=(1/g).toFixed(2)+" m";
+    document.getElementById("lenBar").style.width=(100/g)+"%";
+    document.getElementById("tDil").textContent=g.toFixed(2)+" s";
+    document.getElementById("tLab").textContent=g.toFixed(2)+" s";
+    document.getElementById("hMov").style.transform="translateX(-50%) rotate(360deg)";
+    document.getElementById("hLab").style.transform="translateX(-50%) rotate("+(360/g)+"deg)";
+    // event coords
+    const xp=g*(event.x-beta*event.ct), ctp=g*(event.ct-beta*event.x);
+    document.getElementById("eLab").textContent="(x = "+event.x.toFixed(2)+", ct = "+event.ct.toFixed(2)+")";
+    document.getElementById("eMov").textContent="(x′ = "+xp.toFixed(2)+", ct′ = "+ctp.toFixed(2)+")";
+    draw();
+  }
+  // clock hand animation (continuous spin scaled by dilation)
+  let t0=performance.now();
+  function tick(now){const el=(now-t0)/1000;const g=gamma();
+    document.getElementById("hMov").style.transform="translateX(-50%) rotate("+((el*120)%360)+"deg)";
+    document.getElementById("hLab").style.transform="translateX(-50%) rotate("+(((el*120)/g)%360)+"deg)";
+    requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+
+  // interaction
+  document.getElementById("beta").addEventListener("input",e=>{beta=+e.target.value;update();});
+  document.getElementById("tGrid").addEventListener("change",e=>{showGrid=e.target.checked;draw();});
+  document.getElementById("tHyp").addEventListener("change",e=>{showHyp=e.target.checked;draw();});
+  let dragging=false;
+  function pick(e){const r=cv.getBoundingClientRect();const px=e.clientX-r.left,py=e.clientY-r.top;
+    event.x=Math.max(-RANGE,Math.min(RANGE,wx(px)));event.ct=Math.max(-RANGE,Math.min(RANGE,wct(py)));update();}
+  cv.addEventListener("pointerdown",e=>{dragging=true;cv.setPointerCapture(e.pointerId);pick(e);});
+  cv.addEventListener("pointermove",e=>{if(dragging)pick(e);});
+  cv.addEventListener("pointerup",()=>dragging=false);
+  addEventListener("resize",resize);
+  resize();update();
+})();
+</script>
+</body>
+</html>
