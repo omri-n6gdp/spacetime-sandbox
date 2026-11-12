@@ -1,5 +1,7 @@
 # Spacetime Sandbox · Special Relativity
 
+**▶ Try it online: [https://omri-n6gdp.github.io/spacetime-sandbox/](https://omri-n6gdp.github.io/spacetime-sandbox/)** (works on phones too)
+
 Special-relativity sandbox: interactive spacetime (Minkowski) diagrams.
 
 ## How to use
